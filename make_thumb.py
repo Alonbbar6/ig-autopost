@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-# Matches the portfolio at alonso-portfolio.pages.dev: ink background, volt accent,
+# Matches the portfolio: ink background, volt accent,
 # Big Shoulders Display headlines, Hanken Grotesk body.
 W, H = 1080, 1350
 BG = (11, 11, 11)
@@ -11,7 +11,7 @@ TEXT = (250, 250, 250)
 MUTED = (160, 160, 160)
 HANDLE = "@bardaleslabs"
 TAGLINE = "ALONSO BRYAN / WEBSITES, APPS + AI"
-SITE = "alonso-portfolio.pages.dev"
+SITE = ""  # set to your website address once it is deployed
 
 FONTS = Path(__file__).parent / "fonts"
 DISPLAY = FONTS / "BigShouldersDisplay.ttf"
@@ -72,7 +72,8 @@ def make_thumb(headline, subline, out_path):
     bf = font(BODY, 40, "Bold")
     tf = font(BODY, 34, "Medium")
     d.text((pad, H - pad - 44), HANDLE, font=bf, fill=ACCENT)
-    d.text((W - pad - d.textlength(SITE, font=tf), H - pad - 40), SITE, font=tf, fill=MUTED)
+    if SITE:
+        d.text((W - pad - d.textlength(SITE, font=tf), H - pad - 40), SITE, font=tf, fill=MUTED)
 
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     img.save(out_path, "JPEG", quality=92)
