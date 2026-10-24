@@ -39,7 +39,8 @@ def main():
         if caption.count("#") > 30:
             problems.append(f"{r['date']}: too many hashtags")
 
-        img_tags = "".join(f'<img src="{html.escape(i)}">' for i in imgs)
+        img_tags = "".join(f'<video src="{html.escape(i)}" controls></video>' if i.lower().endswith(".mp4")
+                           else f'<img src="{html.escape(i)}">' for i in imgs)
         cards.append(f"""
 <article>
   <header>{html.escape(r['date'])}{' · carousel of ' + str(len(imgs)) if len(imgs) > 1 else ''}</header>
@@ -57,6 +58,7 @@ article{{background:#fff;border:1px solid #ddd;border-radius:10px;overflow:hidde
 header,footer{{padding:10px 14px;font-weight:600}} footer{{font-weight:400;color:#888;font-size:13px}}
 .imgs{{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}}
 .imgs img{{width:100%;flex:none;scroll-snap-align:start;aspect-ratio:4/5;object-fit:cover}}
+.imgs video{{width:100%;flex:none;background:#000}}
 p{{padding:0 14px;line-height:1.4}}
 </style>
 <h1>{len(rows)} upcoming post(s)</h1>

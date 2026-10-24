@@ -18,6 +18,8 @@ DRY_RUN = os.environ.get("DRY_RUN") == "1"
 IG_USER_ID = os.environ.get("IG_USER_ID", "")
 TOKEN = os.environ.get("IG_TOKEN", "")
 IMAGE_BASE_URL = os.environ.get("IMAGE_BASE_URL", "").rstrip("/")
+# raw.githubusercontent.com serves .mp4 as application/octet-stream, so videos come from GitHub Pages.
+VIDEO_BASE_URL = os.environ.get("VIDEO_BASE_URL", "").rstrip("/") or IMAGE_BASE_URL
 
 MAX_CAPTION = 2200
 MAX_HASHTAGS = 30
@@ -78,7 +80,13 @@ def image_files(row):
     files = [p.strip() for p in row["image"].split("|") if p.strip()]
     if len(files) > MAX_CAROUSEL:
         sys.exit(f"{row['date']}: {len(files)} images, a carousel allows {MAX_CAROUSEL}")
+    if any(is_video(f) for f in files) and len(files) > 1:
+        sys.exit(f"{row['date']}: a Reel is a single .mp4, don't mix it with other files")
     return files
+
+
+def is_video(path):
+    return path.lower().endswith(".mp4")
 
 
 def wait_until_public(url, tries=20):
@@ -90,8 +98,8 @@ def wait_until_public(url, tries=20):
     sys.exit(f"Image never became public: {url}")
 
 
-def wait_until_ready(creation_id):
-    for _ in range(30):
+def wait_until_ready(creation_id, tries=30):
+    for _ in range(tries):
         status = api("GET", creation_id, fields="status_code").get("status_code")
         if status == "FINISHED":
             return
@@ -111,6 +119,11 @@ def already_published(caption):
 
 
 def publish(image_urls, caption):
+    if is_video(image_urls[0]):
+        creation_id = api("POST", f"{IG_USER_ID}/media", media_type="REELS", video_url=image_urls[0],
+                          caption=caption, share_to_feed="true")["id"]
+        wait_until_ready(creation_id, tries=120)  # videos take minutes to process
+        return api("POST", f"{IG_USER_ID}/media_publish", creation_id=creation_id)["id"]
     if len(image_urls) == 1:
         creation_id = api("POST", f"{IG_USER_ID}/media", image_url=image_urls[0], caption=caption)["id"]
     else:
@@ -151,7 +164,7 @@ def main():
     elif missing:
         sys.exit(f"{row['date']}: image files not found: {missing}")
 
-    image_urls = [f"{IMAGE_BASE_URL}/{f}" for f in files]
+    image_urls = [f"{VIDEO_BASE_URL if is_video(f) else IMAGE_BASE_URL}/{f}" for f in files]
     print(f"Posting {row['date']}: {image_urls}")
     if DRY_RUN:
         print("DRY_RUN on, skipping Instagram.")
