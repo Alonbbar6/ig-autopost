@@ -138,9 +138,21 @@ def publish(image_urls, caption):
     return api("POST", f"{IG_USER_ID}/media_publish", creation_id=creation_id)["id"]
 
 
+def resolve_account():
+    """Use the account the token belongs to, so a stale IG_USER_ID secret can't break posting."""
+    global IG_USER_ID
+    me = api("GET", "me", fields="user_id,username")
+    if IG_USER_ID and IG_USER_ID != str(me["user_id"]):
+        print(f"IG_USER_ID secret doesn't match the token; posting as @{me['username']} (the token's account).")
+    IG_USER_ID = str(me["user_id"])
+    print(f"Posting as @{me['username']}")
+
+
 def main():
-    if not DRY_RUN and not (IG_USER_ID and TOKEN and IMAGE_BASE_URL):
-        sys.exit("Set IG_USER_ID, IG_TOKEN and IMAGE_BASE_URL (or DRY_RUN=1)")
+    if not DRY_RUN and not (TOKEN and IMAGE_BASE_URL):
+        sys.exit("Set IG_TOKEN and IMAGE_BASE_URL (or DRY_RUN=1)")
+    if not DRY_RUN:
+        resolve_account()
 
     rows = load_rows()
     today = datetime.now(TZ).date().isoformat()
