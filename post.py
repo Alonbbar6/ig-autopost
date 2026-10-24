@@ -22,6 +22,7 @@ IMAGE_BASE_URL = os.environ.get("IMAGE_BASE_URL", "").rstrip("/")
 MAX_CAPTION = 2200
 MAX_HASHTAGS = 30
 MAX_CAROUSEL = 10
+FIELDS = ["date", "headline", "subline", "caption", "image", "posted", "media_id", "permalink"]
 
 
 def load_rows():
@@ -31,7 +32,9 @@ def load_rows():
 
 def save_rows(rows):
     with CSV_PATH.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=rows[0].keys())
+        # Keep any extra columns, but always write the standard ones (older CSVs lack permalink).
+        fields = FIELDS + [k for k in rows[0] if k not in FIELDS]
+        w = csv.DictWriter(f, fieldnames=fields, restval="")
         w.writeheader()
         w.writerows(rows)
 
@@ -165,6 +168,7 @@ def main():
 
     row["posted"] = "yes"
     row["media_id"] = media_id
+    row["permalink"] = api("GET", media_id, fields="permalink").get("permalink", "")
     save_rows(rows)
     git_push(f"posted {row['date']}")
 

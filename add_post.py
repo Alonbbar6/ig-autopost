@@ -53,6 +53,7 @@ def main():
         "image": a.image if a.image is not None else ask("Your own image path(s), | separated (blank = auto thumbnail)"),
         "posted": "no",
         "media_id": "",
+        "permalink": "",
     }
     date.fromisoformat(row["date"])
     validate(row)

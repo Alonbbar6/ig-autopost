@@ -44,3 +44,10 @@ posts.csv columns: date, headline, subline, caption, image, posted, media_id.
 It posts at 16:17 UTC: 12:17pm Miami in summer, 11:17am in winter.
 If a run publishes but fails to save, the next run sees the caption is already on Instagram and
 just marks the row as posted instead of posting twice.
+
+## Managing from the portfolio admin
+Your portfolio has a private page at /admin (password login) that edits this repo for you:
+add, edit, delete and reorder carousel images, preview posts like Instagram, start a run
+("Post next due now" or "Dry run") and see recent runs. Each save is one commit to posts.csv
+(plus any uploaded JPEGs in posts/), so the CLI scripts above keep working side by side.
+After editing on the website, run git pull here before using add_post.py.
