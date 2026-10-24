@@ -1,0 +1,53 @@
+name: Instagram autopost
+
+on:
+  schedule:
+    # 16:17 UTC = 12:17pm Miami in summer (EDT), 11:17am in winter (EST)
+    - cron: "17 16 * * *"
+    - cron: "41 12 1,15 * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (make the thumbnail but don't post)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+# Never let two runs post at the same time.
+concurrency:
+  group: ig-autopost
+  cancel-in-progress: false
+
+jobs:
+  post:
+    if: github.event.schedule != '41 12 1,15 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get install -y fonts-dejavu-core
+      - run: pip install requests pillow
+      - run: python post.py
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+          IMAGE_BASE_URL: https://raw.githubusercontent.com/${{ github.repository }}/main
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+
+  refresh-token:
+    if: github.event.schedule == '41 12 1,15 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python refresh_token.py
+        env:
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
